@@ -1,7 +1,5 @@
 package es.ejemplo.android.mybooklist.libros.service
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import es.ejemplo.android.mybooklist.libros.domain.Libro
 import es.ejemplo.android.mybooklist.libros.domain.enums.Estados
 import es.ejemplo.android.mybooklist.libros.GeneroConteo
@@ -27,6 +25,8 @@ class LibroService(
     suspend fun eliminarLibro(id: Int) = repositorio.eliminarLibro(id)
 
     suspend fun buscarEnGoogleBooks(consulta: String): List<Libro> = repositorio.buscarLibrosRemoto(consulta)
+
+    fun buscarLocal(query: String): Flow<List<Libro>> = repositorio.buscarLocal(query)
 
     suspend fun actualizarProgreso(libro: Libro, paginasLeidas: Int) {
         val nuevoEstado = when {

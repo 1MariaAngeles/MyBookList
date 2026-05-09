@@ -15,7 +15,7 @@ data class Libro(
     val isbn: String?,
     val portadaUrl: String?,
     val paginasTotales: Int?,
-    val genero: String? = null,
+    val generos: List<String> = emptyList(),
     val paginasLeidas: Int = 0,
     val notaPersonal: Int? = null,
     val estado: Estados = Estados.Pendiente,

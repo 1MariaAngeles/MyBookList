@@ -31,6 +31,9 @@ class LibroRepositoryImpl(
     
     fun obtenerGenerosMasLeidos(): Flow<List<GeneroConteo>> = libroDao.obtenerGenerosMasLeidos()
 
+    // Búsqueda Local (LIKE)
+    fun buscarLocal(query: String): Flow<List<Libro>> = libroDao.buscarLocal(query)
+
     // Búsqueda Remota en Google Books
     suspend fun buscarLibrosRemoto(consulta: String): List<Libro> {
         return try {
@@ -44,7 +47,7 @@ class LibroRepositoryImpl(
                            ?: item.volumeInfo.industryIdentifiers?.firstOrNull { it.type == "ISBN_10" }?.identifier,
                     portadaUrl = item.volumeInfo.imageLinks?.thumbnail?.replace("http:", "https:"),
                     paginasTotales = item.volumeInfo.pageCount,
-                    genero = item.volumeInfo.categories?.firstOrNull(),
+                    generos = item.volumeInfo.categories ?: emptyList(),
                     estado = Estados.Pendiente
                 )
             } ?: emptyList()

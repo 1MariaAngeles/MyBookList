@@ -1,7 +1,5 @@
 package es.ejemplo.android.mybooklist.libros.infraestructure
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.room.TypeConverter
 import es.ejemplo.android.mybooklist.libros.domain.enums.Estados
 import java.time.LocalDateTime
@@ -24,5 +22,15 @@ class EstadosMapper {
     @TypeConverter
     fun dateToTimestamp(date: LocalDateTime?): String? {
         return date?.format(formatter)
+    }
+
+    @TypeConverter
+    fun fromStringList(value: List<String>?): String? {
+        return value?.joinToString(",")
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
     }
 }
