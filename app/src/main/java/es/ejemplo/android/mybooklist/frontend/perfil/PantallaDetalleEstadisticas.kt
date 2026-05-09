@@ -35,20 +35,15 @@ fun PantallaDetalleEstadisticas(
 ) {
     val todosLosLibros by viewModel.todosLosLibros.collectAsState(initial = emptyList())
     
-    val librosAMostrar = when (tipo) {
-        "terminados" -> todosLosLibros.filter { it.estado == Estados.Leido }
-        "paginas" -> todosLosLibros.filter { it.paginasLeidas > 0 }.sortedByDescending { it.paginasLeidas }
-        else -> todosLosLibros // Caso genérico o géneros (se podría filtrar más)
-    }
+    val colorFondo = Color(0xFFFDFCF4)
+    val verdePrincipal = Color(0xFF6B8E23)
 
     val titulo = when (tipo) {
         "terminados" -> "Libros Terminados"
         "paginas" -> "Progreso de Lectura"
+        "generos" -> "Libros por Género"
         else -> "Tus Libros"
     }
-
-    val colorFondo = Color(0xFFFDFCF4)
-    val verdePrincipal = Color(0xFF6B8E23)
 
     Scaffold(
         topBar = {
@@ -64,50 +59,83 @@ fun PantallaDetalleEstadisticas(
         },
         containerColor = colorFondo
     ) { padding ->
-        if (librosAMostrar.isEmpty()) {
+        if (todosLosLibros.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No hay datos para mostrar todavía", color = Color.Gray)
+                Text("No hay libros registrados", color = Color.Gray)
             }
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(librosAMostrar) { libro ->
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp).height(80.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AsyncImage(
-                                model = libro.portadaUrl,
-                                contentDescription = null,
-                                modifier = Modifier.width(55.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
+                if (tipo == "generos") {
+                    // Agrupamos libros por género
+                    val generosUnicos = todosLosLibros.flatMap { it.generos }.distinct().sorted()
+                    
+                    generosUnicos.forEach { genero ->
+                        item {
+                            Text(
+                                text = genero,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = verdePrincipal,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                                Text(text = "De ${libro.autor}", fontSize = 13.sp, color = Color.Gray)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                if (tipo == "paginas") {
-                                    Text(
-                                        text = "${libro.paginasLeidas} páginas de ${libro.paginasTotales ?: "?"}",
-                                        fontSize = 12.sp,
-                                        color = verdePrincipal,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                } else {
-                                    Text(text = "Estado: ${libro.estado}", fontSize = 12.sp, color = Color.Gray)
-                                }
-                            }
+                        }
+                        val librosDeEsteGenero = todosLosLibros.filter { it.generos.contains(genero) }
+                        items(librosDeEsteGenero) { libro ->
+                            ItemLibroEstadistica(libro, null)
                         }
                     }
+                } else {
+                    val librosFiltrados = when (tipo) {
+                        "terminados" -> todosLosLibros.filter { it.estado == Estados.Leido }
+                        "paginas" -> todosLosLibros.filter { it.paginasLeidas > 0 }.sortedByDescending { it.paginasLeidas }
+                        else -> todosLosLibros
+                    }
+                    items(librosFiltrados) { libro ->
+                        ItemLibroEstadistica(libro, tipo)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ItemLibroEstadistica(libro: Libro, tipo: String?) {
+    val verdePrincipal = Color(0xFF6B8E23)
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp).height(80.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = libro.portadaUrl,
+                contentDescription = null,
+                modifier = Modifier.width(55.dp).fillMaxHeight().clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+                Text(text = "De ${libro.autor}", fontSize = 13.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(4.dp))
+                if (tipo == "paginas") {
+                    Text(
+                        text = "${libro.paginasLeidas} / ${libro.paginasTotales ?: "?"} págs",
+                        fontSize = 12.sp,
+                        color = verdePrincipal,
+                        fontWeight = FontWeight.Medium
+                    )
+                } else {
+                    Text(text = "Estado: ${libro.estado}", fontSize = 12.sp, color = Color.Gray)
                 }
             }
         }

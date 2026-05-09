@@ -6,9 +6,8 @@ import java.time.LocalDateTime
 
 @Entity(tableName = "Resenia")
 data class Resenia (
-    @PrimaryKey(autoGenerate = true)
-    val idResenia: Int = 0,
-    val idLibro: Int,
+    @PrimaryKey
+    val idLibro: Int, // Un libro, una reseña
     val comentario: String,
     val ultimaEdicion: LocalDateTime = LocalDateTime.now()
 )

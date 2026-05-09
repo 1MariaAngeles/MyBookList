@@ -48,7 +48,8 @@ class LibroRepositoryImpl(
                     portadaUrl = item.volumeInfo.imageLinks?.thumbnail?.replace("http:", "https:"),
                     paginasTotales = item.volumeInfo.pageCount,
                     generos = item.volumeInfo.categories ?: emptyList(),
-                    estado = Estados.Pendiente
+                    estado = Estados.Pendiente,
+                    fechaPublicacion = item.volumeInfo.publishedDate
                 )
             } ?: emptyList()
         } catch (e: Exception) {

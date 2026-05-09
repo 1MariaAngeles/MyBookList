@@ -8,6 +8,7 @@ import es.ejemplo.android.mybooklist.libros.domain.enums.Estados
 import es.ejemplo.android.mybooklist.libros.service.LibroService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 
 class LibroViewModel(
     private val servicio: LibroService,
@@ -83,6 +84,12 @@ class LibroViewModel(
             servicio.actualizarProgreso(libro, paginasLeidas)
         }
     }
+
+    fun actualizarProgresoCapitulos(libro: Libro, capitulosLeidos: Int, capitulosTotales: Int? = null) {
+        viewModelScope.launch {
+            servicio.actualizarProgresoCapitulos(libro, capitulosLeidos, capitulosTotales)
+        }
+    }
     
     fun cambiarEstado(libro: Libro, nuevoEstado: Estados) {
         viewModelScope.launch {
@@ -103,4 +110,8 @@ class LibroViewModel(
     }
     
     fun obtenerResenia(idLibro: Int) = servicio.obtenerResenia(idLibro)
+
+    fun validarFechas(inicio: LocalDateTime?, fin: LocalDateTime?, pub: String?): String? {
+        return servicio.validarFechas(inicio, fin, pub)
+    }
 }

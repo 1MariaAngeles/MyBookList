@@ -9,7 +9,7 @@ import es.ejemplo.android.mybooklist.libros.infraestructure.EstadosMapper
 import es.ejemplo.android.mybooklist.resenia.domain.Resenia
 import es.ejemplo.android.mybooklist.resenia.ReseniaDao
 
-@Database(entities = [Libro::class, Resenia::class], version = 2, exportSchema = false)
+@Database(entities = [Libro::class, Resenia::class], version = 4, exportSchema = false)
 @TypeConverters(EstadosMapper::class)
 abstract class BaseDatosLocal : RoomDatabase() {
     abstract fun libroDao(): LibroDao
