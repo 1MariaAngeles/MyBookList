@@ -4,7 +4,10 @@ import android.app.Application
 import androidx.room.Room
 import es.ejemplo.android.mybooklist.general.BaseDatosLocal
 import es.ejemplo.android.mybooklist.general.UserPreferences
+import es.ejemplo.android.mybooklist.general.remote.AniListService
 import es.ejemplo.android.mybooklist.general.remote.GoogleBooksService
+import es.ejemplo.android.mybooklist.general.remote.MangaDexService
+import es.ejemplo.android.mybooklist.general.remote.OpenLibraryService
 import es.ejemplo.android.mybooklist.libros.infraestructure.LibroRepositoryImpl
 import es.ejemplo.android.mybooklist.libros.service.LibroService
 import retrofit2.Retrofit
@@ -20,16 +23,52 @@ class MyBookListApp : Application() {
 
     val userPreferences by lazy { UserPreferences(this) }
 
-    private val retrofit by lazy {
+    // Retrofit para Google Books
+    private val retrofitGoogle by lazy {
         Retrofit.Builder()
             .baseUrl("https://www.googleapis.com/books/v1/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    private val servicioApi by lazy { retrofit.create(GoogleBooksService::class.java) }
+    // Retrofit para Open Library
+    private val retrofitOpenLibrary by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://openlibrary.org/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
 
-    private val repositorio by lazy { LibroRepositoryImpl(baseDatos.libroDao(), servicioApi) }
+    // Retrofit para AniList (GraphQL)
+    private val retrofitAniList by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://graphql.anilist.co/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    // Retrofit para MangaDex
+    private val retrofitMangaDex by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://api.mangadex.org/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    private val googleApi by lazy { retrofitGoogle.create(GoogleBooksService::class.java) }
+    private val openLibraryApi by lazy { retrofitOpenLibrary.create(OpenLibraryService::class.java) }
+    private val aniListApi by lazy { retrofitAniList.create(AniListService::class.java) }
+    private val mangaDexApi by lazy { retrofitMangaDex.create(MangaDexService::class.java) }
+
+    private val repositorio by lazy { 
+        LibroRepositoryImpl(
+            baseDatos.libroDao(), 
+            googleApi, 
+            openLibraryApi,
+            aniListApi,
+            mangaDexApi
+        ) 
+    }
 
     val libroService by lazy { LibroService(repositorio, baseDatos.reseniaDao()) }
 }

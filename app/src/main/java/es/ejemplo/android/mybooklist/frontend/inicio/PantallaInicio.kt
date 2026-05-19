@@ -42,6 +42,8 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
 
     val colorFondo = Color(0xFFFDFCF4)
     val verdePrincipal = Color(0xFF6B8E23)
+    val negroTexto = Color(0xFF000000)
+    val grisMuyOscuro = Color(0xFF212121)
 
     Column(
         modifier = Modifier
@@ -50,7 +52,7 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
-        // Cabecera Unificada
+        // Cabecera
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -61,7 +63,7 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
-                color = Color(0xFF2D3436)
+                color = negroTexto
             )
             Surface(
                 modifier = Modifier.size(45.dp),
@@ -84,11 +86,10 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
             lineHeight = 42.sp,
-            color = Color(0xFF2D3436),
+            color = negroTexto,
             maxLines = 3
         )
 
-        // Mensaje de Meta cumplida
         if (terminados >= meta && meta > 0) {
             Spacer(modifier = Modifier.height(16.dp))
             Surface(
@@ -105,7 +106,7 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
                     Text(
                         text = "¡Increíble! Has alcanzado tu meta de $meta libros. 🏆",
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2D3436)
+                        color = negroTexto
                     )
                 }
             }
@@ -113,7 +114,6 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Carrusel destacado
         if (librosLeyendo.isNotEmpty()) {
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -143,7 +143,8 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
         Text(
             text = "Tu progreso global",
             fontSize = 18.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = negroTexto
         )
         Row(
             modifier = Modifier
@@ -151,9 +152,9 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
                 .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            EstadisticaSimple("Páginas", (totalPaginas ?: 0).toString())
-            EstadisticaSimple("Leídos", terminados.toString())
-            EstadisticaSimple("Meta", meta.toString())
+            EstadisticaSimple("Páginas", (totalPaginas ?: 0).toString(), negroTexto, verdePrincipal)
+            EstadisticaSimple("Leídos", terminados.toString(), negroTexto, verdePrincipal)
+            EstadisticaSimple("Meta", meta.toString(), negroTexto, verdePrincipal)
         }
 
         Spacer(modifier = Modifier.height(30.dp))
@@ -161,32 +162,33 @@ fun PantallaInicio(viewModel: LibroViewModel, alHacerClicEnLibro: (Int) -> Unit)
         Text(
             text = "Continúa Leyendo",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = negroTexto
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         if (librosLeyendo.isNotEmpty()) {
             librosLeyendo.forEach { libro ->
-                ItemProgresoLibro(libro, verdePrincipal, alHacerClicEnLibro)
+                ItemProgresoLibro(libro, verdePrincipal, alHacerClicEnLibro, negroTexto, grisMuyOscuro)
                 Spacer(modifier = Modifier.height(16.dp))
             }
         } else {
-            Text(text = "No tienes lecturas activas", color = Color.Gray)
+            Text(text = "No tienes lecturas activas", color = grisMuyOscuro)
         }
     }
 }
 
 @Composable
-fun EstadisticaSimple(label: String, valor: String) {
+fun EstadisticaSimple(label: String, valor: String, colorEtiqueta: Color, colorValor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = valor, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6B8E23))
-        Text(text = label, fontSize = 12.sp, color = Color.Gray)
+        Text(text = valor, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = colorValor)
+        Text(text = label, fontSize = 12.sp, color = colorEtiqueta)
     }
 }
 
 @Composable
-fun ItemProgresoLibro(libro: Libro, colorBarra: Color, alHacerClicEnLibro: (Int) -> Unit) {
+fun ItemProgresoLibro(libro: Libro, colorBarra: Color, alHacerClicEnLibro: (Int) -> Unit, colorTitulo: Color, colorSub: Color) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,8 +208,8 @@ fun ItemProgresoLibro(libro: Libro, colorBarra: Color, alHacerClicEnLibro: (Int)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(text = "Progreso: ${libro.porcentajeCompletado}%", fontSize = 12.sp, color = Color.Gray)
+            Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = colorTitulo)
+            Text(text = "Progreso: ${libro.porcentajeCompletado}%", fontSize = 12.sp, color = colorSub)
             Spacer(modifier = Modifier.height(4.dp))
             LinearProgressIndicator(
                 progress = { libro.porcentajeCompletado / 100f },

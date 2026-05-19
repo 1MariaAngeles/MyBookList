@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -36,20 +37,22 @@ fun PantallaBuscar(
 ) {
     val consulta by viewModel.consultaBusqueda.collectAsState()
     val resultadosRemote by viewModel.resultadosBusqueda.collectAsState()
-    val prediccionesLocales by viewModel.prediccionesLocales.collectAsState()
+    val resultadosLocales by viewModel.prediccionesLocales.collectAsState()
     val estaCargando by viewModel.estaCargando.collectAsState()
     val focusManager = LocalFocusManager.current
 
     val colorFondo = Color(0xFFFDFCF4)
     val verdePrincipal = Color(0xFF6B8E23)
+    val negroTexto = Color(0xFF000000)
+    val grisOscuro = Color(0xFF333333)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Explorar", fontFamily = FontFamily.Serif) },
+                title = { Text("Explorar", fontFamily = FontFamily.Serif, color = negroTexto, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = negroTexto)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = colorFondo)
@@ -65,20 +68,21 @@ fun PantallaBuscar(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Barra de Búsqueda con predicciones
+            // Barra de Búsqueda MANUAL
             OutlinedTextField(
                 value = consulta,
                 onValueChange = { viewModel.actualizarConsulta(it) },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Título o autor...") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
+                textStyle = TextStyle(color = negroTexto, fontSize = 16.sp),
+                placeholder = { Text("Título, autor o ISBN...", color = grisOscuro) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = negroTexto) },
                 trailingIcon = {
                     if (consulta.isNotEmpty()) {
                         IconButton(onClick = { 
                             viewModel.buscarLibros(consulta)
                             focusManager.clearFocus()
                         }) {
-                            Icon(Icons.Default.CloudDownload, contentDescription = "Buscar en Google", tint = verdePrincipal)
+                            Icon(Icons.Default.Search, contentDescription = "Buscar", tint = verdePrincipal)
                         }
                     }
                 },
@@ -95,8 +99,10 @@ fun PantallaBuscar(
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = verdePrincipal,
+                    unfocusedBorderColor = grisOscuro,
                     focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    unfocusedContainerColor = Color.White,
+                    cursorColor = negroTexto
                 )
             )
 
@@ -107,9 +113,9 @@ fun PantallaBuscar(
                 onClick = alHacerClicEnManual,
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp), tint = verdePrincipal)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Añadir manualmente", fontSize = 14.sp)
+                Text("Añadir manualmente", fontSize = 14.sp, color = negroTexto, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -118,27 +124,38 @@ fun PantallaBuscar(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                // Predicciones Locales
-                if (prediccionesLocales.isNotEmpty()) {
-                    item { Text("En tu biblioteca", fontWeight = FontWeight.Bold, color = verdePrincipal) }
-                    items(prediccionesLocales) { libro ->
-                        ItemResultadoBusqueda(libro, enBiblioteca = true, alAnadir = {}, alHacerClic = { alHacerClicEnLibro(libro.id) })
+                // Resultados Locales (Solo tras pulsar buscar)
+                if (resultadosLocales.isNotEmpty()) {
+                    item { Text("En tu biblioteca", fontWeight = FontWeight.ExtraBold, color = negroTexto, fontSize = 18.sp) }
+                    items(resultadosLocales) { libro ->
+                        ItemResultadoBusqueda(
+                            libro = libro, 
+                            enBiblioteca = true, 
+                            alAnadir = {}, 
+                            alHacerClic = { alHacerClicEnLibro(libro.id) },
+                            negroTexto = negroTexto,
+                            grisOscuro = grisOscuro
+                        )
                     }
                 }
 
-                // Resultados de Google Books
+                // Resultados de Google Books (Solo tras pulsar buscar)
                 if (estaCargando) {
-                    item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = verdePrincipal) } }
+                    item { Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = verdePrincipal) } }
                 } else if (resultadosRemote.isNotEmpty()) {
-                    item { Text("Resultados de Google Books", fontWeight = FontWeight.Bold, color = Color.Gray) }
+                    item { Text("Resultados de Internet", fontWeight = FontWeight.ExtraBold, color = negroTexto, fontSize = 18.sp) }
                     items(resultadosRemote) { libro ->
                         ItemResultadoBusqueda(
                             libro = libro,
                             enBiblioteca = false,
                             alAnadir = { viewModel.guardarLibro(libro) },
-                            alHacerClic = {}
+                            alHacerClic = {},
+                            negroTexto = negroTexto,
+                            grisOscuro = grisOscuro
                         )
                     }
+                } else if (consulta.isNotEmpty() && !estaCargando) {
+                   // Mensaje opcional si no hay resultados tras buscar
                 }
             }
         }
@@ -150,18 +167,20 @@ fun ItemResultadoBusqueda(
     libro: Libro,
     enBiblioteca: Boolean,
     alAnadir: () -> Unit,
-    alHacerClic: () -> Unit
+    alHacerClic: () -> Unit,
+    negroTexto: Color,
+    grisOscuro: Color
 ) {
     var guardado by remember { mutableStateOf(enBiblioteca) }
 
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(3.dp),
         modifier = Modifier.fillMaxWidth().clickable { if (enBiblioteca) alHacerClic() }
     ) {
         Row(
-            modifier = Modifier.padding(12.dp).height(80.dp),
+            modifier = Modifier.padding(12.dp).height(85.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
@@ -172,18 +191,19 @@ fun ItemResultadoBusqueda(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                Text(text = libro.autor, fontSize = 13.sp, color = Color.Gray)
+                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, color = negroTexto)
+                Text(text = libro.autor, fontSize = 13.sp, color = grisOscuro)
                 if (enBiblioteca) {
-                    Text(text = "Estado: ${libro.estado}", fontSize = 11.sp, color = Color(0xFF6B8E23))
+                    Text(text = "Estado: ${libro.estado}", fontSize = 11.sp, color = Color(0xFF4B6419), fontWeight = FontWeight.Medium)
                 }
             }
             if (!enBiblioteca) {
                 IconButton(onClick = { guardado = true; alAnadir() }, enabled = !guardado) {
                     Icon(
-                        imageVector = if (guardado) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
+                        imageVector = if (guardado) Icons.Default.CheckCircle else Icons.Default.AddCircle,
                         contentDescription = null,
-                        tint = if (guardado) Color.Gray else Color(0xFF6B8E23)
+                        tint = if (guardado) Color.Gray else Color(0xFF6B8E23),
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }

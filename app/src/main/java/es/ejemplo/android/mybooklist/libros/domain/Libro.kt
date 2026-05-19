@@ -11,19 +11,20 @@ data class Libro(
     val id: Int = 0,
     val titulo: String,
     val autor: String,
-    val descripcion: String?,
-    val isbn: String?,
-    val portadaUrl: String?,
-    val paginasTotales: Int?,
+    val descripcion: String? = null,
+    val isbn: String? = null,
+    val portadaUrl: String? = null,
+    val paginasTotales: Int? = null,
     val generos: List<String> = emptyList(),
     val paginasLeidas: Int = 0,
     val capitulosTotales: Int? = null,
     val capitulosLeidos: Int = 0,
     val notaPersonal: Int? = null,
     val estado: Estados = Estados.Pendiente,
-    val fechaPublicacion: String? = null, // Formato AAAA-MM-DD o solo AAAA
+    val fechaPublicacion: String? = null,
     val fechaInicio: LocalDateTime? = null,
-    val fechaFin: LocalDateTime? = null
+    val fechaFin: LocalDateTime? = null,
+    val archivoUrl: String? = null
 ) {
     val porcentajeCompletado: Int
         get() {

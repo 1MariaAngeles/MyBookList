@@ -48,6 +48,7 @@ fun PantallaBiblioteca(
     }
 
     val colorFondo = Color(0xFFFDFCF4)
+    val negroTexto = Color(0xFF000000)
 
     Scaffold(
         floatingActionButton = {
@@ -69,7 +70,7 @@ fun PantallaBiblioteca(
                 .padding(padding)
                 .padding(horizontal = 20.dp)
         ) {
-            // Cabecera Unificada (Igual que en Inicio)
+            // Cabecera
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -80,7 +81,7 @@ fun PantallaBiblioteca(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
-                    color = Color(0xFF2D3436)
+                    color = negroTexto
                 )
                 Surface(
                     modifier = Modifier.size(45.dp),
@@ -107,7 +108,8 @@ fun PantallaBiblioteca(
                     ChipFiltro(
                         texto = "Todos",
                         seleccionado = estadoFiltro == null,
-                        alHacerClic = { estadoFiltro = null }
+                        alHacerClic = { estadoFiltro = null },
+                        negroTexto = negroTexto
                     )
                 }
                 items(Estados.entries) { estado ->
@@ -127,14 +129,15 @@ fun PantallaBiblioteca(
                         seleccionado = estadoFiltro == estado,
                         alHacerClic = { 
                             estadoFiltro = if (estadoFiltro == estado) null else estado 
-                        }
+                        },
+                        negroTexto = negroTexto
                     )
                 }
             }
 
             if (librosMostrados.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Tu biblioteca está vacía", color = Color.Gray)
+                    Text("Tu biblioteca está vacía", color = negroTexto, fontWeight = FontWeight.Medium)
                 }
             } else {
                 LazyVerticalGrid(
@@ -158,12 +161,13 @@ fun ChipFiltro(
     texto: String,
     seleccionado: Boolean,
     alHacerClic: () -> Unit,
-    icono: ImageVector? = null
+    icono: ImageVector? = null,
+    negroTexto: Color
 ) {
     FilterChip(
         selected = seleccionado,
         onClick = alHacerClic,
-        label = { Text(texto, fontSize = 14.sp) },
+        label = { Text(texto, fontSize = 14.sp, fontWeight = if (seleccionado) FontWeight.Bold else FontWeight.Normal) },
         leadingIcon = icono?.let { 
             { Icon(it, contentDescription = null, modifier = Modifier.size(18.dp)) } 
         },
@@ -171,7 +175,8 @@ fun ChipFiltro(
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = Color(0xFFDDE5B6),
             selectedLabelColor = Color(0xFF6B8E23),
-            containerColor = Color.White
+            containerColor = Color.White,
+            labelColor = negroTexto
         ),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true,

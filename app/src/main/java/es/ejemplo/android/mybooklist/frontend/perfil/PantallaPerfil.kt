@@ -52,6 +52,8 @@ fun PantallaPerfil(
 
     val colorFondo = Color(0xFFFDFCF4)
     val verdePrincipal = Color(0xFF6B8E23)
+    val negroTexto = Color(0xFF000000)
+    val grisOscuro = Color(0xFF333333)
 
     Column(
         modifier = Modifier
@@ -66,7 +68,7 @@ fun PantallaPerfil(
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Serif,
             modifier = Modifier.padding(vertical = 16.dp),
-            color = Color(0xFF2D3436)
+            color = negroTexto
         )
 
         // Sección de Usuario
@@ -118,15 +120,15 @@ fun PantallaPerfil(
                         text = nombre,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF2D3436)
+                        color = negroTexto
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.Edit, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = grisOscuro, modifier = Modifier.size(16.dp))
                 }
                 Text(
                     text = "Lector de MyBookList",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = grisOscuro
                 )
             }
         }
@@ -149,11 +151,11 @@ fun PantallaPerfil(
                     Icon(Icons.Default.Flag, contentDescription = null, tint = verdePrincipal)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(text = "Meta de lectura anual", fontWeight = FontWeight.Bold)
-                        Text(text = "$meta libros este año", fontSize = 14.sp, color = Color.Gray)
+                        Text(text = "Meta de lectura anual", fontWeight = FontWeight.Bold, color = negroTexto)
+                        Text(text = "$meta libros este año", fontSize = 14.sp, color = grisOscuro)
                     }
                 }
-                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = grisOscuro)
             }
         }
 
@@ -163,7 +165,7 @@ fun PantallaPerfil(
             text = "Estadísticas",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF2D3436)
+            color = negroTexto
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -174,6 +176,8 @@ fun PantallaPerfil(
                 valor = (totalPaginas ?: 0).toString(),
                 icono = Icons.Default.AutoGraph,
                 colorIcono = verdePrincipal,
+                negroTexto = negroTexto,
+                grisOscuro = grisOscuro,
                 modifier = Modifier.weight(1f).clickable { alHacerClicEnEstadistica("paginas") }
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -182,6 +186,8 @@ fun PantallaPerfil(
                 valor = librosTerminados.toString(),
                 icono = Icons.Default.CheckCircle,
                 colorIcono = Color(0xFF8D6E63),
+                negroTexto = negroTexto,
+                grisOscuro = grisOscuro,
                 modifier = Modifier.weight(1f).clickable { alHacerClicEnEstadistica("terminados") }
             )
         }
@@ -199,15 +205,15 @@ fun PantallaPerfil(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.PieChart, contentDescription = null, tint = verdePrincipal)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Tus géneros favoritos", fontWeight = FontWeight.Bold)
+                    Text(text = "Tus géneros favoritos", fontWeight = FontWeight.Bold, color = negroTexto)
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.ChevronRight, null, tint = Color.Gray)
+                    Icon(Icons.Default.ChevronRight, null, tint = grisOscuro)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (generosMasLeidos.isEmpty()) {
-                    Text("¡Empieza a leer para ver tus gustos!", color = Color.Gray, fontSize = 14.sp)
+                    Text("¡Empieza a leer para ver tus gustos!", color = grisOscuro, fontSize = 14.sp)
                 } else {
-                    generosMasLeidos.take(3).forEach { FilaGenero(it.genero, it.conteo) }
+                    generosMasLeidos.take(3).forEach { FilaGenero(it.genero, it.conteo, negroTexto, verdePrincipal) }
                 }
             }
         }
@@ -217,7 +223,7 @@ fun PantallaPerfil(
         var nombreInput by remember { mutableStateOf(nombre) }
         AlertDialog(
             onDismissRequest = { mostrarDialogoNombre = false },
-            title = { Text("¿Cómo te llamas?") },
+            title = { Text("¿Cómo te llamas?", color = negroTexto) },
             text = {
                 OutlinedTextField(
                     value = nombreInput,
@@ -231,10 +237,10 @@ fun PantallaPerfil(
                 TextButton(onClick = {
                     viewModel.actualizarNombre(nombreInput)
                     mostrarDialogoNombre = false
-                }) { Text("Guardar") }
+                }) { Text("Guardar", color = verdePrincipal) }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoNombre = false }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarDialogoNombre = false }) { Text("Cancelar", color = Color.Gray) }
             }
         )
     }
@@ -243,7 +249,7 @@ fun PantallaPerfil(
         var metaInput by remember { mutableStateOf(meta.toString()) }
         AlertDialog(
             onDismissRequest = { mostrarDialogoMeta = false },
-            title = { Text("Editar Meta Anual") },
+            title = { Text("Editar Meta Anual", color = negroTexto) },
             text = {
                 OutlinedTextField(
                     value = metaInput,
@@ -257,17 +263,17 @@ fun PantallaPerfil(
                 TextButton(onClick = {
                     viewModel.actualizarMeta(metaInput.toIntOrNull() ?: meta)
                     mostrarDialogoMeta = false
-                }) { Text("Guardar") }
+                }) { Text("Guardar", color = verdePrincipal) }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoMeta = false }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarDialogoMeta = false }) { Text("Cancelar", color = Color.Gray) }
             }
         )
     }
 }
 
 @Composable
-fun TarjetaEstadistica(titulo: String, valor: String, icono: androidx.compose.ui.graphics.vector.ImageVector, colorIcono: Color, modifier: Modifier) {
+fun TarjetaEstadistica(titulo: String, valor: String, icono: androidx.compose.ui.graphics.vector.ImageVector, colorIcono: Color, negroTexto: Color, grisOscuro: Color, modifier: Modifier) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -277,19 +283,19 @@ fun TarjetaEstadistica(titulo: String, valor: String, icono: androidx.compose.ui
         Column(modifier = Modifier.padding(16.dp)) {
             Icon(icono, null, tint = colorIcono)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = valor, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-            Text(text = titulo, fontSize = 12.sp, color = Color.Gray)
+            Text(text = valor, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = negroTexto)
+            Text(text = titulo, fontSize = 12.sp, color = grisOscuro)
         }
     }
 }
 
 @Composable
-fun FilaGenero(nombre: String, cantidad: Int) {
+fun FilaGenero(nombre: String, cantidad: Int, negroTexto: Color, verdePrincipal: Color) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = nombre, fontSize = 14.sp)
-        Text(text = cantidad.toString(), fontWeight = FontWeight.Bold, color = Color(0xFF6B8E23))
+        Text(text = nombre, fontSize = 14.sp, color = negroTexto)
+        Text(text = cantidad.toString(), fontWeight = FontWeight.Bold, color = verdePrincipal)
     }
 }
