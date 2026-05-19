@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,14 +36,16 @@ fun PantallaEntradaManual(
 
     val colorFondo = Color(0xFFFDFCF4)
     val verdePrincipal = Color(0xFF6B8E23)
+    val negroTexto = Color(0xFF000000)
+    val grisOscuro = Color(0xFF333333)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Añadir Manualmente", fontFamily = FontFamily.Serif) },
+                title = { Text("Añadir Manualmente", fontFamily = FontFamily.Serif, color = negroTexto, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = negroTexto)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = colorFondo)
@@ -62,25 +65,29 @@ fun PantallaEntradaManual(
                 text = "Datos del Libro",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D3436)
+                color = negroTexto
             )
 
-            CampoEntrada(label = "Título*", valor = titulo, alCambiar = { titulo = it })
-            CampoEntrada(label = "Autor*", valor = autor, alCambiar = { autor = it })
-            CampoEntrada(label = "Géneros (separa por comas)", valor = genero, alCambiar = { genero = it })
-            CampoEntrada(label = "ISBN", valor = isbn, alCambiar = { isbn = it })
-            CampoEntrada(label = "Total de páginas", valor = paginas, alCambiar = { paginas = it }, esNumerico = true)
+            CampoEntrada(label = "Título*", valor = titulo, alCambiar = { titulo = it }, negroTexto = negroTexto, grisOscuro = grisOscuro)
+            CampoEntrada(label = "Autor*", valor = autor, alCambiar = { autor = it }, negroTexto = negroTexto, grisOscuro = grisOscuro)
+            CampoEntrada(label = "Géneros (separa por comas)", valor = genero, alCambiar = { genero = it }, negroTexto = negroTexto, grisOscuro = grisOscuro)
+            CampoEntrada(label = "ISBN", valor = isbn, alCambiar = { isbn = it }, negroTexto = negroTexto, grisOscuro = grisOscuro)
+            CampoEntrada(label = "Total de páginas", valor = paginas, alCambiar = { paginas = it }, esNumerico = true, negroTexto = negroTexto, grisOscuro = grisOscuro)
             
             OutlinedTextField(
                 value = descripcion,
                 onValueChange = { descripcion = it },
-                label = { Text("Descripción") },
+                label = { Text("Descripción", color = grisOscuro) },
                 modifier = Modifier.fillMaxWidth().height(120.dp),
+                textStyle = TextStyle(color = negroTexto),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = verdePrincipal,
+                    unfocusedBorderColor = grisOscuro,
                     focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    unfocusedContainerColor = Color.White,
+                    focusedTextColor = negroTexto,
+                    unfocusedTextColor = negroTexto
                 )
             )
 
@@ -107,9 +114,9 @@ fun PantallaEntradaManual(
                 shape = RoundedCornerShape(12.dp),
                 enabled = titulo.isNotBlank() && autor.isNotBlank()
             ) {
-                Icon(Icons.Default.Save, contentDescription = null)
+                Icon(Icons.Default.Save, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("GUARDAR LIBRO", fontWeight = FontWeight.Bold)
+                Text("GUARDAR LIBRO", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -121,20 +128,26 @@ fun CampoEntrada(
     label: String,
     valor: String,
     alCambiar: (String) -> Unit,
-    esNumerico: Boolean = false
+    esNumerico: Boolean = false,
+    negroTexto: Color,
+    grisOscuro: Color
 ) {
     OutlinedTextField(
         value = valor,
         onValueChange = alCambiar,
-        label = { Text(label) },
+        label = { Text(label, color = grisOscuro) },
         modifier = Modifier.fillMaxWidth(),
+        textStyle = TextStyle(color = negroTexto),
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
         keyboardOptions = if (esNumerico) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color(0xFF6B8E23),
+            unfocusedBorderColor = grisOscuro,
             focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
+            unfocusedContainerColor = Color.White,
+            focusedTextColor = negroTexto,
+            unfocusedTextColor = negroTexto
         )
     )
 }

@@ -10,8 +10,6 @@ import es.ejemplo.android.mybooklist.resenia.ReseniaDao
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.text.Normalizer
 
 class LibroService(
     private val repositorio: LibroRepositoryImpl,
@@ -28,17 +26,16 @@ class LibroService(
 
     suspend fun eliminarLibro(id: Int) = repositorio.eliminarLibro(id)
 
-    // Búsqueda normalizada para la API (Mejorada para tildes y mayúsculas)
+    // Simplificado: Google Books ya maneja bien las tildes y espacios
     suspend fun buscarEnGoogleBooks(consulta: String): List<Libro> {
-        val normalized = Normalizer.normalize(consulta.trim(), Normalizer.Form.NFD)
-        val queryLimpia = normalized.replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "").lowercase()
-        return repositorio.buscarLibrosRemoto(queryLimpia)
+        if (consulta.isBlank()) return emptyList()
+        return repositorio.buscarLibrosRemoto(consulta.trim())
     }
 
     fun buscarLocal(query: String): Flow<List<Libro>> = repositorio.buscarLocal(query.trim())
 
-    suspend fun actualizarProgreso(libro: Libro, paginasLeidas: Int) {
-        val totalPaginas = libro.paginasTotales ?: 0
+    suspend fun actualizarProgreso(libro: Libro, paginasLeidas: Int, paginasTotales: Int? = null) {
+        val totalPaginas = paginasTotales ?: libro.paginasTotales ?: 0
         val paginasValidadas = if (totalPaginas > 0 && paginasLeidas > totalPaginas) totalPaginas else paginasLeidas
 
         val nuevoEstado = when {
@@ -50,6 +47,7 @@ class LibroService(
 
         val libroActualizado = libro.copy(
             paginasLeidas = paginasValidadas,
+            paginasTotales = if (paginasTotales != null) paginasTotales else libro.paginasTotales,
             estado = nuevoEstado,
             fechaFin = if (nuevoEstado == Estados.Leido && libro.fechaFin == null) LocalDateTime.now() else libro.fechaFin,
             fechaInicio = if (libro.fechaInicio == null && paginasValidadas > 0) LocalDateTime.now() else libro.fechaInicio
@@ -78,32 +76,17 @@ class LibroService(
         repositorio.actualizarLibro(libroActualizado)
     }
 
-    // Validación de fechas mejorada
     fun validarFechas(fechaInicio: LocalDateTime?, fechaFin: LocalDateTime?, fechaPublicacionStr: String?): String? {
         val ahora = LocalDateTime.now()
-
-        // 1. Fecha de inicio no puede ser en el futuro
-        if (fechaInicio != null && fechaInicio.isAfter(ahora)) {
-            return "No puedes empezar un libro en el futuro"
-        }
-
-        // 2. Fecha de fin no puede ser en el futuro
-        if (fechaFin != null && fechaFin.isAfter(ahora)) {
-            return "No puedes terminar un libro en el futuro"
-        }
-
-        // 3. Fecha fin no puede ser anterior a fecha inicio
-        if (fechaInicio != null && fechaFin != null && fechaFin.isBefore(fechaInicio)) {
-            return "La fecha de fin no puede ser anterior a la de inicio"
-        }
+        if (fechaInicio != null && fechaInicio.isAfter(ahora)) return "No puedes empezar un libro en el futuro"
+        if (fechaFin != null && fechaFin.isAfter(ahora)) return "No puedes terminar un libro en el futuro"
+        if (fechaInicio != null && fechaFin != null && fechaFin.isBefore(fechaInicio)) return "La fecha de fin no puede ser anterior a la de inicio"
         
-        // 4. Fecha de inicio no puede ser anterior a la fecha de publicación
         if (fechaInicio != null && !fechaPublicacionStr.isNullOrBlank()) {
             try {
                 val pubDate = if (fechaPublicacionStr.length == 4) {
                     LocalDate.of(fechaPublicacionStr.toInt(), 1, 1).atStartOfDay()
                 } else {
-                    // Google Books usa AAAA-MM-DD o AAAA-MM
                     val partes = fechaPublicacionStr.split("-")
                     when (partes.size) {
                         1 -> LocalDate.of(partes[0].toInt(), 1, 1).atStartOfDay()
@@ -111,30 +94,19 @@ class LibroService(
                         else -> LocalDate.parse(fechaPublicacionStr).atStartOfDay()
                     }
                 }
-                
-                if (fechaInicio.isBefore(pubDate)) {
-                    return "No puedes haber empezado el libro antes de su publicación ($fechaPublicacionStr)"
-                }
-            } catch (e: Exception) {
-                // Si el formato es extraño, permitimos para no bloquear
-            }
+                if (fechaInicio.isBefore(pubDate)) return "No puedes haber empezado el libro antes de su publicación ($fechaPublicacionStr)"
+            } catch (e: Exception) {}
         }
         return null
     }
 
-    // Gestión de Reseñas
     fun obtenerResenia(idLibro: Int): Flow<Resenia?> = reseniaDao.obtenerPorLibroId(idLibro)
 
     suspend fun guardarResenia(idLibro: Int, comentario: String) {
-        val resenia = Resenia(
-            idLibro = idLibro,
-            comentario = comentario,
-            ultimaEdicion = LocalDateTime.now()
-        )
+        val resenia = Resenia(idLibro = idLibro, comentario = comentario, ultimaEdicion = LocalDateTime.now())
         reseniaDao.guardarResenia(resenia)
     }
 
-    // Estadísticas
     fun obtenerTotalPaginas(): Flow<Int?> = repositorio.obtenerTotalPaginasLeidas()
     fun obtenerLibrosTerminados(): Flow<Int> = repositorio.obtenerConteoLibrosTerminados()
     fun obtenerGenerosFavoritos(): Flow<List<GeneroConteo>> = repositorio.obtenerGenerosMasLeidos()

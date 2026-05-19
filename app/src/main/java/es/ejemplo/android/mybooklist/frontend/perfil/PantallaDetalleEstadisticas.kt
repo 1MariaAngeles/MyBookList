@@ -1,7 +1,6 @@
 package es.ejemplo.android.mybooklist.frontend.perfil
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,6 +36,8 @@ fun PantallaDetalleEstadisticas(
     
     val colorFondo = Color(0xFFFDFCF4)
     val verdePrincipal = Color(0xFF6B8E23)
+    val negroTexto = Color(0xFF000000)
+    val grisOscuro = Color(0xFF333333)
 
     val titulo = when (tipo) {
         "terminados" -> "Libros Terminados"
@@ -48,10 +49,10 @@ fun PantallaDetalleEstadisticas(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(titulo, fontFamily = FontFamily.Serif) },
+                title = { Text(titulo, fontFamily = FontFamily.Serif, color = negroTexto, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = negroTexto)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = colorFondo)
@@ -61,7 +62,7 @@ fun PantallaDetalleEstadisticas(
     ) { padding ->
         if (todosLosLibros.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No hay libros registrados", color = Color.Gray)
+                Text("No hay libros registrados", color = grisOscuro, fontWeight = FontWeight.Medium)
             }
         } else {
             LazyColumn(
@@ -70,7 +71,6 @@ fun PantallaDetalleEstadisticas(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (tipo == "generos") {
-                    // Agrupamos libros por género
                     val generosUnicos = todosLosLibros.flatMap { it.generos }.distinct().sorted()
                     
                     generosUnicos.forEach { genero ->
@@ -78,14 +78,14 @@ fun PantallaDetalleEstadisticas(
                             Text(
                                 text = genero,
                                 fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = verdePrincipal,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = negroTexto,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
                         val librosDeEsteGenero = todosLosLibros.filter { it.generos.contains(genero) }
                         items(librosDeEsteGenero) { libro ->
-                            ItemLibroEstadistica(libro, null)
+                            ItemLibroEstadistica(libro, null, negroTexto, grisOscuro, verdePrincipal)
                         }
                     }
                 } else {
@@ -95,7 +95,7 @@ fun PantallaDetalleEstadisticas(
                         else -> todosLosLibros
                     }
                     items(librosFiltrados) { libro ->
-                        ItemLibroEstadistica(libro, tipo)
+                        ItemLibroEstadistica(libro, tipo, negroTexto, grisOscuro, verdePrincipal)
                     }
                 }
             }
@@ -104,16 +104,15 @@ fun PantallaDetalleEstadisticas(
 }
 
 @Composable
-fun ItemLibroEstadistica(libro: Libro, tipo: String?) {
-    val verdePrincipal = Color(0xFF6B8E23)
+fun ItemLibroEstadistica(libro: Libro, tipo: String?, colorTitulo: Color, colorGris: Color, colorVerde: Color) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(12.dp).height(80.dp),
+            modifier = Modifier.padding(12.dp).height(85.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
@@ -124,18 +123,18 @@ fun ItemLibroEstadistica(libro: Libro, tipo: String?) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                Text(text = "De ${libro.autor}", fontSize = 13.sp, color = Color.Gray)
+                Text(text = libro.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, color = colorTitulo)
+                Text(text = "De ${libro.autor}", fontSize = 13.sp, color = colorGris)
                 Spacer(modifier = Modifier.height(4.dp))
                 if (tipo == "paginas") {
                     Text(
                         text = "${libro.paginasLeidas} / ${libro.paginasTotales ?: "?"} págs",
                         fontSize = 12.sp,
-                        color = verdePrincipal,
-                        fontWeight = FontWeight.Medium
+                        color = colorVerde,
+                        fontWeight = FontWeight.Bold
                     )
                 } else {
-                    Text(text = "Estado: ${libro.estado}", fontSize = 12.sp, color = Color.Gray)
+                    Text(text = "Estado: ${libro.estado}", fontSize = 12.sp, color = colorVerde, fontWeight = FontWeight.Medium)
                 }
             }
         }

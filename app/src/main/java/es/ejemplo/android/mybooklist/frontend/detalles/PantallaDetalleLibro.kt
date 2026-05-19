@@ -1,6 +1,7 @@
 package es.ejemplo.android.mybooklist.frontend.detalles
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,9 +23,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -49,16 +52,18 @@ fun PantallaDetalleLibro(
 
     if (libro == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color(0xFF6B8E23))
         }
         return
     }
 
+    // Estados
     var comentario by remember(resenia) { mutableStateOf(resenia?.comentario ?: "") }
     var nuevoGenero by remember { mutableStateOf("") }
+    var expandidoEstado by remember { mutableStateOf(false) }
     var mostrarDialogoProgresoPaginas by remember { mutableStateOf(false) }
     var mostrarDialogoProgresoCapitulos by remember { mutableStateOf(false) }
-    var expandidoEstado by remember { mutableStateOf(false) }
+    var mostrarDialogoSinopsis by remember { mutableStateOf(false) }
 
     val launcherPortada = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -66,9 +71,23 @@ fun PantallaDetalleLibro(
         uri?.let { viewModel.guardarLibro(libro.copy(portadaUrl = it.toString())) }
     }
 
+    val launcherArchivo = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { 
+            try {
+                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {}
+            viewModel.guardarLibro(libro.copy(archivoUrl = it.toString())) 
+        }
+    }
+
     val colorFondo = Color(0xFFFDFCF4)
-    val colorMarron = Color(0xFF8D6E63)
+    val negroTexto = Color(0xFF000000)
+    val grisOscuro = Color(0xFF333333)
     val verdePrincipal = Color(0xFF6B8E23)
+    val verdeSuave = Color(0xFFDDE5B6)
+    val colorMarron = Color(0xFF8D6E63)
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
     // Función para mostrar el selector de fecha
@@ -91,10 +110,10 @@ fun PantallaDetalleLibro(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ficha Técnica") },
+                title = { Text("Ficha Técnica", color = negroTexto, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = alVolver) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = negroTexto)
                     }
                 },
                 actions = {
@@ -118,7 +137,7 @@ fun PantallaDetalleLibro(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Portada con opción de cambio
+            // Portada con edición
             Box(
                 modifier = Modifier
                     .width(180.dp)
@@ -150,32 +169,115 @@ fun PantallaDetalleLibro(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(text = libro.titulo, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Text(text = "por ${libro.autor}", fontSize = 16.sp, color = Color.Gray)
+            Text(text = libro.titulo, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = negroTexto)
+            Text(text = "por ${libro.autor}", fontSize = 16.sp, color = grisOscuro)
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Estado de lectura
-            Box {
-                FilterChip(
-                    selected = true,
-                    onClick = { expandidoEstado = true },
-                    label = { Text("Estado: ${libro.estado}") },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = Color(0xFFDDE5B6),
-                        labelColor = verdePrincipal
-                    )
-                )
-                DropdownMenu(expanded = expandidoEstado, onDismissRequest = { expandidoEstado = false }) {
-                    Estados.entries.forEach { est ->
-                        DropdownMenuItem(
-                            text = { Text(est.name) },
-                            onClick = {
-                                viewModel.cambiarEstado(libro, est)
-                                expandidoEstado = false
-                            }
+            // Estado y Valoración
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box {
+                    FilterChip(
+                        selected = true,
+                        onClick = { expandidoEstado = true },
+                        label = { Text("Estado: ${libro.estado}", fontWeight = FontWeight.Bold) },
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = verdeSuave,
+                            labelColor = verdePrincipal
                         )
+                    )
+                    DropdownMenu(
+                        expanded = expandidoEstado, 
+                        onDismissRequest = { expandidoEstado = false },
+                        modifier = Modifier.background(verdeSuave)
+                    ) {
+                        Estados.entries.forEach { est ->
+                            DropdownMenuItem(
+                                text = { Text(est.name, color = negroTexto) },
+                                onClick = {
+                                    viewModel.cambiarEstado(libro, est)
+                                    expandidoEstado = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Row {
+                    for (i in 1..5) {
+                        Icon(
+                            imageVector = if (i <= (libro.notaPersonal ?: 0)) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                            contentDescription = "Nota $i",
+                            tint = if (i <= (libro.notaPersonal ?: 0)) Color(0xFFFFD700) else Color.Gray,
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clickable { viewModel.guardarLibro(libro.copy(notaPersonal = i)) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Archivo del Libro
+            Text("Archivo Digital", fontWeight = FontWeight.Bold, color = negroTexto, modifier = Modifier.fillMaxWidth())
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (libro.archivoUrl != null) Icons.Default.Description else Icons.Default.UploadFile,
+                            contentDescription = null,
+                            tint = if (libro.archivoUrl != null) verdePrincipal else Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = if (libro.archivoUrl != null) "Archivo vinculado" else "Sin archivo adjunto",
+                            fontSize = 14.sp,
+                            color = if (libro.archivoUrl != null) negroTexto else Color.Gray,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Row {
+                        if (libro.archivoUrl != null) {
+                            IconButton(onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                        setDataAndType(Uri.parse(libro.archivoUrl), "*/*")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    // Error al abrir
+                                }
+                            }) {
+                                Icon(Icons.Default.OpenInNew, contentDescription = "Abrir archivo", tint = verdePrincipal)
+                            }
+                        }
+                        IconButton(onClick = { launcherArchivo.launch("*/*") }) {
+                            Icon(Icons.Default.AttachFile, contentDescription = "Vincular archivo", tint = verdePrincipal)
+                        }
                     }
                 }
             }
@@ -188,13 +290,13 @@ fun PantallaDetalleLibro(
                     horizontalAlignment = Alignment.Start,
                     modifier = Modifier.clickable { mostrarSelectorFecha(true) }
                 ) {
-                    Text("Inicio", fontSize = 12.sp, color = Color.Gray)
+                    Text("Inicio", fontSize = 12.sp, color = grisOscuro)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = libro.fechaInicio?.format(dateFormatter) ?: "Establecer",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (libro.fechaInicio == null) verdePrincipal else Color.Unspecified
+                            color = if (libro.fechaInicio == null) verdePrincipal else negroTexto
                         )
                         Icon(Icons.Default.EditCalendar, null, modifier = Modifier.size(16.dp).padding(start = 4.dp), tint = Color.Gray)
                     }
@@ -203,14 +305,14 @@ fun PantallaDetalleLibro(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.clickable { mostrarSelectorFecha(false) }
                 ) {
-                    Text("Fin", fontSize = 12.sp, color = Color.Gray)
+                    Text("Fin", fontSize = 12.sp, color = grisOscuro)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.EditCalendar, null, modifier = Modifier.size(16.dp).padding(end = 4.dp), tint = Color.Gray)
                         Text(
                             text = libro.fechaFin?.format(dateFormatter) ?: "Establecer",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = if (libro.fechaFin == null) verdePrincipal else Color.Unspecified
+                            color = if (libro.fechaFin == null) verdePrincipal else negroTexto
                         )
                     }
                 }
@@ -218,31 +320,39 @@ fun PantallaDetalleLibro(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Información Adicional (Sinopsis)
-            Text("Sinopsis", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(12.dp)
+            // Sinopsis
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    if (!libro.isbn.isNullOrBlank()) {
-                        Text(text = "ISBN: ${libro.isbn}", fontSize = 12.sp, color = Color.Gray)
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-                    Text(
-                        text = libro.descripcion ?: "Sin descripción disponible.",
-                        fontSize = 14.sp,
-                        color = Color.DarkGray,
-                        lineHeight = 20.sp
-                    )
+                Text("Sinopsis", fontWeight = FontWeight.Bold, color = negroTexto)
+                IconButton(onClick = { mostrarDialogoSinopsis = true }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar sinopsis", tint = verdePrincipal, modifier = Modifier.size(20.dp))
                 }
+            }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable { mostrarDialogoSinopsis = true },
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Text(
+                    text = libro.descripcion ?: "Sin descripción disponible.",
+                    fontSize = 14.sp,
+                    color = negroTexto,
+                    modifier = Modifier.padding(16.dp),
+                    lineHeight = 20.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Géneros
-            Text("Géneros", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+            // Géneros (Añadir/Quitar)
+            Text("Géneros", fontWeight = FontWeight.Bold, color = negroTexto, modifier = Modifier.fillMaxWidth())
             FlowRow(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -250,11 +360,11 @@ fun PantallaDetalleLibro(
                 libro.generos.forEach { gen ->
                     SuggestionChip(
                         onClick = { 
-                            val listaNueva = libro.generos.toMutableList().apply { remove(gen) }
-                            viewModel.guardarLibro(libro.copy(generos = listaNueva))
+                            val lista = libro.generos.toMutableList().apply { remove(gen) }
+                            viewModel.guardarLibro(libro.copy(generos = lista))
                         },
-                        label = { Text(gen) },
-                        icon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp)) }
+                        label = { Text(gen, color = negroTexto) },
+                        icon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = negroTexto) }
                     )
                 }
             }
@@ -263,7 +373,8 @@ fun PantallaDetalleLibro(
                 value = nuevoGenero,
                 onValueChange = { nuevoGenero = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Añadir género...") },
+                placeholder = { Text("Añadir nuevo género...", color = Color.Gray) },
+                textStyle = TextStyle(color = negroTexto),
                 trailingIcon = {
                     IconButton(onClick = {
                         if (nuevoGenero.isNotBlank()) {
@@ -272,7 +383,7 @@ fun PantallaDetalleLibro(
                             nuevoGenero = ""
                         }
                     }) {
-                        Icon(Icons.Default.Add, null, tint = verdePrincipal)
+                        Icon(Icons.Default.AddCircle, null, tint = verdePrincipal)
                     }
                 },
                 shape = RoundedCornerShape(12.dp),
@@ -282,8 +393,8 @@ fun PantallaDetalleLibro(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Progreso Dual (Páginas y Capítulos)
-            Text("Tu progreso", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+            // PROGRESO DUAL
+            Text("Tu progreso", fontWeight = FontWeight.Bold, color = negroTexto, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
@@ -293,8 +404,8 @@ fun PantallaDetalleLibro(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Páginas", fontSize = 12.sp)
-                        Text("${libro.paginasLeidas}/${libro.paginasTotales ?: "?"}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Páginas", fontSize = 12.sp, color = Color.White)
+                        Text("${libro.paginasLeidas}/${libro.paginasTotales ?: "?"}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
                 Button(
@@ -304,32 +415,16 @@ fun PantallaDetalleLibro(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Capítulos", fontSize = 12.sp)
-                        Text("${libro.capitulosLeidos}/${libro.capitulosTotales ?: "?"}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Capítulos", fontSize = 12.sp, color = Color.White)
+                        Text("${libro.capitulosLeidos}/${libro.capitulosTotales ?: "?"}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Valoración
-            Text("Tu valoración", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
-            Row(modifier = Modifier.fillMaxWidth()) {
-                for (i in 1..5) {
-                    IconButton(onClick = { viewModel.guardarLibro(libro.copy(notaPersonal = i)) }) {
-                        Icon(
-                            imageVector = if (i <= (libro.notaPersonal ?: 0)) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                            contentDescription = null,
-                            tint = if (i <= (libro.notaPersonal ?: 0)) Color(0xFFFFD700) else Color.Gray
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Reseña
-            Text("Tu reseña", fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+            // Reseña Personal
+            Text("Tu reseña", fontWeight = FontWeight.Bold, color = negroTexto, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(
                 value = comentario,
                 onValueChange = { 
@@ -337,10 +432,11 @@ fun PantallaDetalleLibro(
                     viewModel.guardarResenia(libro.id, it)
                 },
                 modifier = Modifier.fillMaxWidth().height(150.dp),
-                placeholder = { Text("Escribe aquí tu opinión personal...") },
+                textStyle = TextStyle(color = negroTexto),
+                placeholder = { Text("Escribe aquí tu opinión...", color = Color.Gray) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorMarron,
+                    focusedBorderColor = verdePrincipal,
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White
                 )
@@ -348,55 +444,75 @@ fun PantallaDetalleLibro(
         }
     }
 
-    // Diálogo Páginas
+    // --- DIÁLOGOS DE ACTUALIZACIÓN ---
+
     if (mostrarDialogoProgresoPaginas) {
-        var paginasInput by remember { mutableStateOf(libro.paginasLeidas.toString()) }
+        var paginasLeidasInput by remember { mutableStateOf(libro.paginasLeidas.toString()) }
+        var paginasTotalesInput by remember { mutableStateOf(libro.paginasTotales?.toString() ?: "") }
+
         AlertDialog(
             onDismissRequest = { mostrarDialogoProgresoPaginas = false },
-            title = { Text("Actualizar páginas") },
+            containerColor = verdeSuave,
+            title = { Text("Actualizar páginas", color = negroTexto) },
             text = {
-                OutlinedTextField(
-                    value = paginasInput,
-                    onValueChange = { paginasInput = it },
-                    label = { Text("¿En qué página estás?") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = paginasTotalesInput,
+                        onValueChange = { paginasTotalesInput = it },
+                        label = { Text("Páginas totales") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(color = negroTexto)
+                    )
+                    OutlinedTextField(
+                        value = paginasLeidasInput,
+                        onValueChange = { paginasLeidasInput = it },
+                        label = { Text("¿Por qué página vas?") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(color = negroTexto)
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.actualizarProgreso(libro, paginasInput.toIntOrNull() ?: 0)
+                    val total = paginasTotalesInput.toIntOrNull()
+                    val leidas = paginasLeidasInput.toIntOrNull() ?: 0
+                    viewModel.actualizarProgreso(libro, leidas, total)
                     mostrarDialogoProgresoPaginas = false
-                }) { Text("Guardar") }
+                }) { Text("Guardar", color = verdePrincipal) }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoProgresoPaginas = false }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarDialogoProgresoPaginas = false }) { Text("Cancelar", color = Color.Gray) }
             }
         )
     }
 
-    // Diálogo Capítulos
     if (mostrarDialogoProgresoCapitulos) {
         var capsLeidosInput by remember { mutableStateOf(libro.capitulosLeidos.toString()) }
         var capsTotalesInput by remember { mutableStateOf(libro.capitulosTotales?.toString() ?: "") }
+
         AlertDialog(
             onDismissRequest = { mostrarDialogoProgresoCapitulos = false },
-            title = { Text("Actualizar capítulos") },
+            containerColor = verdeSuave,
+            title = { Text("Actualizar capítulos", color = negroTexto) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = capsTotalesInput,
                         onValueChange = { capsTotalesInput = it },
-                        label = { Text("Capítulos totales del libro") },
+                        label = { Text("Capítulos totales") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(color = negroTexto)
                     )
                     OutlinedTextField(
                         value = capsLeidosInput,
                         onValueChange = { capsLeidosInput = it },
                         label = { Text("¿Por qué capítulo vas?") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = TextStyle(color = negroTexto)
                     )
                 }
             },
@@ -406,10 +522,43 @@ fun PantallaDetalleLibro(
                     val leidos = capsLeidosInput.toIntOrNull() ?: 0
                     viewModel.actualizarProgresoCapitulos(libro, leidos, total)
                     mostrarDialogoProgresoCapitulos = false
-                }) { Text("Guardar") }
+                }) { Text("Guardar", color = verdePrincipal) }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogoProgresoCapitulos = false }) { Text("Cancelar") }
+                TextButton(onClick = { mostrarDialogoProgresoCapitulos = false }) { Text("Cancelar", color = Color.Gray) }
+            }
+        )
+    }
+
+    if (mostrarDialogoSinopsis) {
+        var sinopsisInput by remember { mutableStateOf(libro.descripcion ?: "") }
+        AlertDialog(
+            onDismissRequest = { mostrarDialogoSinopsis = false },
+            containerColor = verdeSuave,
+            title = { Text("Editar Sinopsis", color = negroTexto) },
+            text = {
+                OutlinedTextField(
+                    value = sinopsisInput,
+                    onValueChange = { sinopsisInput = it },
+                    modifier = Modifier.fillMaxWidth().height(200.dp),
+                    textStyle = TextStyle(color = negroTexto),
+                    placeholder = { Text("Escribe la sinopsis...", color = Color.Gray) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = verdePrincipal,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.guardarLibro(libro.copy(descripcion = sinopsisInput))
+                    mostrarDialogoSinopsis = false
+                }) { Text("Guardar", color = verdePrincipal) }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogoSinopsis = false }) { Text("Cancelar", color = Color.Gray) }
             }
         )
     }

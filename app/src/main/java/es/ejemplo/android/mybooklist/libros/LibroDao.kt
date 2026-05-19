@@ -37,7 +37,7 @@ interface LibroDao {
     @Query("SELECT generos as genero, COUNT(*) as conteo FROM Libros WHERE generos IS NOT NULL GROUP BY generos ORDER BY conteo DESC")
     fun obtenerGenerosMasLeidos(): Flow<List<GeneroConteo>>
 
-    @Query("SELECT * FROM Libros WHERE titulo LIKE '%' || :query || '%' OR autor LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM Libros WHERE LOWER(titulo) LIKE '%' || LOWER(:query) || '%' OR LOWER(autor) LIKE '%' || LOWER(:query) || '%'")
     fun buscarLocal(query: String): Flow<List<Libro>>
 }
 

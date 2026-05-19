@@ -1,5 +1,6 @@
 package es.ejemplo.android.mybooklist.libros.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.ejemplo.android.mybooklist.general.UserPreferences
@@ -18,17 +19,14 @@ class LibroViewModel(
     private val _resultadosBusqueda = MutableStateFlow<List<Libro>>(emptyList())
     val resultadosBusqueda: StateFlow<List<Libro>> = _resultadosBusqueda.asStateFlow()
 
+    private val _prediccionesLocales = MutableStateFlow<List<Libro>>(emptyList())
+    val prediccionesLocales: StateFlow<List<Libro>> = _prediccionesLocales.asStateFlow()
+
     private val _estaCargando = MutableStateFlow(false)
     val estaCargando: StateFlow<Boolean> = _estaCargando.asStateFlow()
 
     private val _consultaBusqueda = MutableStateFlow("")
     val consultaBusqueda: StateFlow<String> = _consultaBusqueda.asStateFlow()
-
-    val prediccionesLocales: StateFlow<List<Libro>> = _consultaBusqueda
-        .debounce(300)
-        .filter { it.length >= 2 }
-        .flatMapLatest { servicio.buscarLocal(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val todosLosLibros = servicio.listarTodos()
     
@@ -44,6 +42,46 @@ class LibroViewModel(
     val totalPaginasLeidas = servicio.obtenerTotalPaginas()
     val conteoLibrosTerminados = servicio.obtenerLibrosTerminados()
     val generosMasLeidos = servicio.obtenerGenerosFavoritos()
+
+    fun actualizarConsulta(nuevaConsulta: String) {
+        _consultaBusqueda.value = nuevaConsulta
+        // Si borramos la búsqueda, limpiamos resultados previos
+        if (nuevaConsulta.isBlank()) {
+            _resultadosBusqueda.value = emptyList()
+            _prediccionesLocales.value = emptyList()
+        }
+    }
+
+    // Búsqueda MANUAL: Solo ocurre al pulsar el botón de buscar
+    fun buscarLibros(consulta: String) {
+        if (consulta.isBlank()) return
+        
+        viewModelScope.launch {
+            _estaCargando.value = true
+            try {
+                // 1. Búsqueda Local (Manual)
+                val locales = servicio.buscarLocal(consulta).first()
+                _prediccionesLocales.value = locales
+
+                // 2. Búsqueda en Google Books (Manual)
+                Log.d("API_SEARCH", "Búsqueda manual iniciada: $consulta")
+                val remotos = servicio.buscarEnGoogleBooks(consulta)
+                _resultadosBusqueda.value = remotos
+                
+            } catch (e: Exception) {
+                Log.e("API_SEARCH", "Error en búsqueda manual: ${e.message}")
+                _resultadosBusqueda.value = emptyList()
+            } finally {
+                _estaCargando.value = false
+            }
+        }
+    }
+
+    fun guardarLibro(libro: Libro) {
+        viewModelScope.launch {
+            servicio.guardarLibro(libro)
+        }
+    }
 
     fun actualizarNombre(nuevoNombre: String) {
         val nombreLimpio = if (nuevoNombre.length > 15) nuevoNombre.take(15) else nuevoNombre
@@ -61,27 +99,9 @@ class LibroViewModel(
         _fotoPerfilUri.value = uri
     }
 
-    fun actualizarConsulta(nuevaConsulta: String) {
-        _consultaBusqueda.value = nuevaConsulta
-    }
-
-    fun buscarLibros(consulta: String) {
+    fun actualizarProgreso(libro: Libro, paginasLeidas: Int, paginasTotales: Int? = null) {
         viewModelScope.launch {
-            _estaCargando.value = true
-            _resultadosBusqueda.value = servicio.buscarEnGoogleBooks(consulta)
-            _estaCargando.value = false
-        }
-    }
-
-    fun guardarLibro(libro: Libro) {
-        viewModelScope.launch {
-            servicio.guardarLibro(libro)
-        }
-    }
-
-    fun actualizarProgreso(libro: Libro, paginasLeidas: Int) {
-        viewModelScope.launch {
-            servicio.actualizarProgreso(libro, paginasLeidas)
+            servicio.actualizarProgreso(libro, paginasLeidas, paginasTotales)
         }
     }
 
